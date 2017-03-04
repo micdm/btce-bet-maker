@@ -2,3 +2,4 @@
 generated/
 out/
 *.iml
+Config.java

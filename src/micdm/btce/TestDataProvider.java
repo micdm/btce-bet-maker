@@ -7,14 +7,15 @@ import io.reactivex.FlowableEmitter;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.math.BigDecimal;
 
-class TestRoundProvider implements RoundProvider {
+class TestDataProvider implements DataProvider {
 
     private final Gson gson;
 
     private Flowable<Round> source;
 
-    TestRoundProvider(Gson gson) {
+    TestDataProvider(Gson gson) {
         this.gson = gson;
     }
 
@@ -37,5 +38,10 @@ class TestRoundProvider implements RoundProvider {
                 .autoConnect();
         }
         return source;
+    }
+
+    @Override
+    public Flowable<BigDecimal> getBalance() {
+        return Flowable.empty();
     }
 }

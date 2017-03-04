@@ -9,11 +9,11 @@ class TestBetHandler {
 
     private final BigDecimal PRIZE_PART = new BigDecimal("0.95");
 
-    private final RoundProvider roundProvider;
+    private final DataProvider dataProvider;
     private final BetMaker betMaker;
 
-    TestBetHandler(RoundProvider roundProvider, BetMaker betMaker) {
-        this.roundProvider = roundProvider;
+    TestBetHandler(DataProvider dataProvider, BetMaker betMaker) {
+        this.dataProvider = dataProvider;
         this.betMaker = betMaker;
     }
 
@@ -31,7 +31,7 @@ class TestBetHandler {
     }
 
     private Single<BigDecimal> getBalance() {
-        return roundProvider.getRounds()
+        return dataProvider.getRounds()
             .flatMap(round ->
                 betMaker.getBets().filter(roundBet -> roundBet.number() == round.number()),
                 this::getRoundBalance
@@ -76,6 +76,6 @@ class TestBetHandler {
     }
 
     private Single<Long> getRoundCount() {
-        return roundProvider.getRounds().count();
+        return dataProvider.getRounds().count();
     }
 }

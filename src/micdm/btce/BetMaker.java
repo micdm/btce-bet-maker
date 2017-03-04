@@ -4,16 +4,16 @@ import io.reactivex.Flowable;
 
 class BetMaker {
 
-    private final RoundProvider roundProvider;
+    private final DataProvider dataProvider;
     private final BetStrategy betStrategy;
 
-    BetMaker(RoundProvider roundProvider, BetStrategy betStrategy) {
-        this.roundProvider = roundProvider;
+    BetMaker(DataProvider dataProvider, BetStrategy betStrategy) {
+        this.dataProvider = dataProvider;
         this.betStrategy = betStrategy;
     }
 
     Flowable<RoundBet> getBets() {
-        return roundProvider.getRounds().map(round -> {
+        return dataProvider.getRounds().map(round -> {
             ImmutableRoundBet.Builder builder = ImmutableRoundBet.builder().number(round.number());
             for (Bet bet: betStrategy.getBets(round)) {
                 if (bet.type() == Bet.Type.DOWN) {
