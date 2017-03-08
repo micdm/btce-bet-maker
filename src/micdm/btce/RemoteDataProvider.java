@@ -6,62 +6,32 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Scheduler;
+import micdm.btce.models.ImmutableRound;
+import micdm.btce.models.Round;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class RemoteDataProvider implements DataProvider {
 
+    private static class WebsocketDisconnectedException extends RuntimeException {}
+
     private enum MessageType {
 
-        INIT(null, "pusher:connection_established") {
-            @Override
-            void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler) {
-                handler.handleInitMessage(websocket, message, source);
-            }
-        },
-        SUBSCRIPTION(null, "pusher_internal:subscription_succeeded") {
-            @Override
-            void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler) {
-                handler.handleSubscriptionMessage(websocket, message, source);
-            }
-        },
-        NEW_PERIOD("periods", "new_period") {
-            @Override
-            void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler) {
-                handler.handleNewPeriodMessage(websocket, message, source);
-            }
-        },
-        PERIOD_UPDATE("periods", "update") {
-            @Override
-            void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler) {
-                handler.handlePeriodUpdateMessage(websocket, message, source);
-            }
-        },
-        PERIOD_TIME("periods", "time") {
-            @Override
-            void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler) {
-                handler.handlePeriodTimeMessage(websocket, message, source);
-            }
-        },
-        TRADES("btc_usd.trades", "trades") {
-            @Override
-            void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler) {
-                handler.handleTradeMessage(websocket, message, source);
-            }
-        },
-        ACCOUNT_UPDATE(Config.ACCOUNT_ID, "update") {
-            @Override
-            void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler) {
-                handler.handleAccountUpdateMessage(websocket, message, source);
-            }
-        };
+        INIT(null, "pusher:connection_established"),
+        SUBSCRIPTION(null, "pusher_internal:subscription_succeeded"),
+        NEW_PERIOD("periods", "new_period"),
+        PERIOD_UPDATE("periods", "update"),
+        PERIOD_TIME("periods", "time"),
+        TRADES("btc_usd.trades", "trades"),
+        ACCOUNT_UPDATE(null, "update");
 
         final String channel;
         final String event;
@@ -77,8 +47,6 @@ class RemoteDataProvider implements DataProvider {
             }
             return this.event.equals(event);
         }
-
-        abstract void execute(WebSocket websocket, Message message, FlowableEmitter<Object> source, RemoteDataProvider handler);
     }
 
     private static class Message {
@@ -149,101 +117,113 @@ class RemoteDataProvider implements DataProvider {
         }
     }
 
+    private static class Datas {
+
+        final NewPeriodData newPeriodData;
+        final PeriodUpdateData periodUpdateData;
+        final long endsIn;
+
+        Datas(NewPeriodData newPeriodData, PeriodUpdateData periodUpdateData, long endsIn) {
+            this.newPeriodData = newPeriodData;
+            this.periodUpdateData = periodUpdateData;
+            this.endsIn = endsIn;
+        }
+    }
+
     private static final Pattern BET_COUNT_PATTERN = Pattern.compile("&#8593;(\\d+) &#8595;(\\d+)");
 
+    private final AccountIdProvider accountIdProvider;
     private final Gson gson;
     private final Logger logger;
     private final Scheduler ioScheduler;
+    private final WebSocketFactory websocketFactory;
 
     private Flowable<Object> messages;
 
-    RemoteDataProvider(Gson gson, Logger logger, Scheduler ioScheduler) {
+    RemoteDataProvider(AccountIdProvider accountIdProvider, Gson gson, Logger logger, Scheduler ioScheduler, WebSocketFactory websocketFactory) {
+        this.accountIdProvider = accountIdProvider;
         this.gson = gson;
         this.logger = logger;
         this.ioScheduler = ioScheduler;
+        this.websocketFactory = websocketFactory;
     }
 
     @Override
     public Flowable<Round> getRounds() {
-        return Flowable
-            .combineLatest(
-                getMessages()
-                    .ofType(NewPeriodData.class)
-                    .switchMap(newPeriodData -> {
-                        ImmutableRound.Builder builder = ImmutableRound.builder()
-                            .number(newPeriodData.id)
-                            .startPrice(newPeriodData.basePrice)
-                            .downCount(0)
-                            .downAmount(BigDecimal.ZERO)
-                            .upCount(0)
-                            .upAmount(BigDecimal.ZERO);
-                        return getMessages()
+        return Flowable.combineLatest(
+            getMessages()
+                .ofType(NewPeriodData.class)
+                .switchMap(newPeriodData ->
+                    Flowable.combineLatest(
+                        getMessages()
                             .ofType(PeriodUpdateData.class)
-                            .filter(periodUpdateData -> periodUpdateData.periodId == newPeriodData.id)
-                            .map(periodUpdateData -> {
-                                if (periodUpdateData.betsCountStr == null) {
-                                    return builder;
-                                }
-                                Matcher matcher = BET_COUNT_PATTERN.matcher(periodUpdateData.betsCountStr);
-                                if (!matcher.find()) {
-                                    throw new IllegalStateException("cannot parse bet counts");
-                                }
-                                return builder
-                                    .downCount(Integer.valueOf(matcher.group(2)))
-                                    .downAmount(periodUpdateData.betsDownTotal)
-                                    .upCount(Integer.valueOf(matcher.group(1)))
-                                    .upAmount(periodUpdateData.betsUpTotal);
-                            })
-                            .startWith(builder);
-                    }),
-                getMessages().ofType(TradeData.class),
-                Flowable
-                    .merge(
-                        getMessages()
-                            .ofType(NewPeriodData.class)
-                            .map(newPeriodData -> newPeriodData.timeLeft * 60),
-                        getMessages()
-                            .ofType(PeriodTimeData.class)
-                            .map(periodTimeData -> periodTimeData.minutes * 60)
+                            .filter(data -> data.periodId == newPeriodData.id)
+                            .filter(data -> data.betsCountStr != null)
+                            .map(Optional::of)
+                            .startWith(Optional.empty()),
+                        Flowable
+                            .merge(
+                                Flowable.just(newPeriodData.timeLeft * 60),
+                                getMessages()
+                                    .ofType(PeriodTimeData.class)
+                                    .map(data -> data.minutes * 60)
+                            )
+                            .switchMap(seconds ->
+                                Flowable.interval(0, 1, TimeUnit.SECONDS).map(counter -> seconds - counter)
+                            ),
+                        (periodUpdateData, endsIn) -> new Datas(newPeriodData, periodUpdateData.isPresent() ? periodUpdateData.get() : null, endsIn)
                     )
-                    .switchMap(seconds ->
-                        Flowable.interval(1, TimeUnit.SECONDS)
-                            .map(counter -> seconds - counter)
-                    ),
-                (builder, tradeData, endsIn) ->
-                    builder
-                        .endPrice(tradeData.price)
-                        .endsIn(Duration.standardSeconds(endsIn))
-                        .build()
-            );
+                ),
+            getMessages().ofType(TradeData.class),
+            (datas, tradeData) -> buildRound(datas.newPeriodData, datas.periodUpdateData, datas.endsIn, tradeData)
+        );
     }
 
     private Flowable<Object> getMessages() {
         if (messages == null) {
-            messages = Flowable.create(this::receiveMessages, BackpressureStrategy.BUFFER)
-                .subscribeOn(ioScheduler)
+            messages = accountIdProvider.getAccountId()
+                .flatMap(accountId ->
+                    Flowable
+                        .create(source -> receiveMessages(source, accountId), BackpressureStrategy.BUFFER)
+                        .retry(error -> error instanceof WebsocketDisconnectedException)
+                        .subscribeOn(ioScheduler)
+                )
                 .share();
         }
         return messages;
     }
 
-    private void receiveMessages(FlowableEmitter<Object> source) throws Exception {
-        logger.debug("Connecting to websocket...");
-        WebSocketFactory factory = new WebSocketFactory();
-        WebSocket websocket = factory.createSocket("wss://ws.pusherapp.com/app/c354d4d129ee0faa5c92?protocol=6&client=js&version=2.0.0&flash=false");
+    private void receiveMessages(FlowableEmitter<Object> source, String accountId) throws Exception {
+        logger.info("Connecting to websocket...");
+        WebSocket websocket = websocketFactory.createSocket("wss://ws.pusherapp.com/app/c354d4d129ee0faa5c92?protocol=6&client=js&version=2.0.0&flash=false");
         websocket.addListener(new WebSocketAdapter() {
             @Override
             public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
-                logger.debug("Websocket connected");
+                logger.info("Websocket connected");
             }
             @Override
             public void onTextMessage(WebSocket websocket, String text) throws Exception {
                 Message message = gson.fromJson(text, Message.class);
-                for (MessageType messageType: MessageType.values()) {
-                    if (messageType.is(message.channel, message.event)) {
-                        messageType.execute(websocket, message, source, RemoteDataProvider.this);
-                        break;
-                    }
+                if (MessageType.INIT.is(message.channel, message.event)) {
+                    handleInitMessage(websocket, accountId);
+                }
+                if (MessageType.SUBSCRIPTION.is(message.channel, message.event)) {
+                    handleSubscriptionMessage(message);
+                }
+                if (MessageType.NEW_PERIOD.is(message.channel, message.event)) {
+                    handleNewPeriodMessage(message, source);
+                }
+                if (MessageType.PERIOD_UPDATE.is(message.channel, message.event)) {
+                    handlePeriodUpdateMessage(message, source);
+                }
+                if (MessageType.PERIOD_TIME.is(message.channel, message.event)) {
+                    handlePeriodTimeMessage(message, source);
+                }
+                if (MessageType.TRADES.is(message.channel, message.event)) {
+                    handleTradesMessage(message, source);
+                }
+                if (MessageType.ACCOUNT_UPDATE.is(message.channel, message.event) && message.channel.equals(accountId)) {
+                    handleAccountUpdateMessage(message, source);
                 }
             }
             @Override
@@ -252,54 +232,84 @@ class RemoteDataProvider implements DataProvider {
             }
             @Override
             public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                logger.debug("Websocket disconnected");
-                source.onComplete();
+                if (closedByServer) {
+                    logger.warn("Websocket disconnected");
+                    source.onError(new WebsocketDisconnectedException());
+                } else {
+                    source.onComplete();
+                }
             }
         });
         websocket.connect();
         source.setCancellable(websocket::disconnect);
     }
 
-    private void handleInitMessage(WebSocket websocket, Message message, FlowableEmitter<Object> source) {
-        logger.debug("Init event received");
+    private void handleInitMessage(WebSocket websocket, String accountId) {
+        logger.trace("Init event received");
         websocket.sendText("{\"event\":\"pusher:subscribe\",\"data\":{\"channel\":\"periods\"}}");
         websocket.sendText("{\"event\":\"pusher:subscribe\",\"data\":{\"channel\":\"btc_usd.trades\"}}");
-        websocket.sendText(String.format("{\"event\":\"pusher:subscribe\",\"data\":{\"channel\":\"%s\"}}", Config.ACCOUNT_ID));
+        websocket.sendText(String.format("{\"event\":\"pusher:subscribe\",\"data\":{\"channel\":\"%s\"}}", accountId));
     }
 
-    private void handleSubscriptionMessage(WebSocket websocket, Message message, FlowableEmitter<Object> source) {
-        logger.debug("Successfully subscribed to {}", message.channel);
+    private void handleSubscriptionMessage(Message message) {
+        logger.trace("Successfully subscribed to {}", message.channel);
     }
 
-    private void handleNewPeriodMessage(WebSocket websocket, Message message, FlowableEmitter<Object> source) {
+    private void handleNewPeriodMessage(Message message, FlowableEmitter<Object> source) {
         NewPeriodData data = gson.fromJson(message.data, NewPeriodData.class);
-        logger.debug("New period: {}", data);
+        logger.trace("New period: {}", data);
         source.onNext(data);
     }
 
-    private void handlePeriodUpdateMessage(WebSocket websocket, Message message, FlowableEmitter<Object> source) {
+    private void handlePeriodUpdateMessage(Message message, FlowableEmitter<Object> source) {
         PeriodUpdateData data = gson.fromJson(message.data, PeriodUpdateData.class);
-        logger.debug("Period update: {}", data);
+        logger.trace("Period update: {}", data);
         source.onNext(data);
     }
 
-    private void handlePeriodTimeMessage(WebSocket websocket, Message message, FlowableEmitter<Object> source) {
+    private void handlePeriodTimeMessage(Message message, FlowableEmitter<Object> source) {
         PeriodTimeData data = new PeriodTimeData(Integer.valueOf(message.data));
-        logger.debug("Period time: {}", data);
+        logger.trace("Period time: {}", data);
         source.onNext(data);
     }
 
-    private void handleTradeMessage(WebSocket websocket, Message message, FlowableEmitter<Object> source) {
+    private void handleTradesMessage(Message message, FlowableEmitter<Object> source) {
         Object[][] temp = gson.fromJson(message.data, Object[][].class);
         TradeData data = new TradeData(new BigDecimal((String) temp[temp.length - 1][1]));
-        logger.debug("Trade: {}", data);
+        logger.trace("Trade: {}", data);
         source.onNext(data);
     }
 
-    private void handleAccountUpdateMessage(WebSocket websocket, Message message, FlowableEmitter<Object> source) {
+    private void handleAccountUpdateMessage(Message message, FlowableEmitter<Object> source) {
         AccountUpdateData data = gson.fromJson(message.data, AccountUpdateData.class);
-        logger.debug("Account update: {}", data);
+        logger.trace("Account update: {}", data);
         source.onNext(data);
+    }
+
+    private Round buildRound(NewPeriodData newPeriodData, PeriodUpdateData periodUpdateData, Long endsIn, TradeData tradeData) {
+        ImmutableRound.Builder builder = ImmutableRound.builder()
+            .number(newPeriodData.id)
+            .startPrice(newPeriodData.basePrice)
+            .endPrice(tradeData.price)
+            .endsIn(Duration.standardSeconds(endsIn));
+        if (periodUpdateData != null) {
+            Matcher matcher = BET_COUNT_PATTERN.matcher(periodUpdateData.betsCountStr);
+            if (!matcher.find()) {
+                throw new IllegalStateException("cannot parse bet counts");
+            }
+            builder
+                .downCount(Integer.valueOf(matcher.group(2)))
+                .downAmount(periodUpdateData.betsDownTotal)
+                .upCount(Integer.valueOf(matcher.group(1)))
+                .upAmount(periodUpdateData.betsUpTotal);
+        } else {
+            builder
+                .downCount(0)
+                .downAmount(BigDecimal.ZERO)
+                .upCount(0)
+                .upAmount(BigDecimal.ZERO);
+        }
+        return builder.build();
     }
 
     @Override

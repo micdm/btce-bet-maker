@@ -1,8 +1,16 @@
 package micdm.btce;
 
 import io.reactivex.Flowable;
+import micdm.btce.models.Bet;
+import micdm.btce.models.ImmutableRoundBet;
+import micdm.btce.models.Round;
+import micdm.btce.models.RoundBet;
+import micdm.btce.strategies.BetStrategy;
+import org.joda.time.Duration;
 
-class BetMaker {
+public class BetMaker {
+
+    private static final Duration TIME_BEFORE_END = Duration.standardSeconds(3);
 
     private final DataProvider dataProvider;
     private final BetStrategy betStrategy;
@@ -12,18 +20,21 @@ class BetMaker {
         this.betStrategy = betStrategy;
     }
 
-    Flowable<RoundBet> getBets() {
-        return dataProvider.getRounds().map(round -> {
-            ImmutableRoundBet.Builder builder = ImmutableRoundBet.builder().number(round.number());
-            for (Bet bet: betStrategy.getBets(round)) {
-                if (bet.type() == Bet.Type.DOWN) {
-                    builder.addDownBets(bet);
+    public Flowable<RoundBet> getBets() {
+        return dataProvider.getRounds()
+            .filter(round -> round.endsIn().isShorterThan(TIME_BEFORE_END))
+            .distinctUntilChanged(Round::number)
+            .map(round -> {
+                ImmutableRoundBet.Builder builder = ImmutableRoundBet.builder().number(round.number());
+                for (Bet bet: betStrategy.getBets(round)) {
+                    if (bet.type() == Bet.Type.DOWN) {
+                        builder.addDownBets(bet);
+                    }
+                    if (bet.type() == Bet.Type.UP) {
+                        builder.addUpBets(bet);
+                    }
                 }
-                if (bet.type() == Bet.Type.UP) {
-                    builder.addUpBets(bet);
-                }
-            }
-            return builder.build();
-        });
+                return builder.build();
+            });
     }
 }

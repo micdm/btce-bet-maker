@@ -1,4 +1,4 @@
-package micdm.btce;
+package micdm.btce.misc;
 
 import org.slf4j.Logger;
 
@@ -22,7 +22,7 @@ public class MainThreadExecutor implements Executor {
     }
 
     public void run() {
-        logger.info("Running executor");
+        logger.debug("Running executor");
         while (!Thread.interrupted()) {
             try {
                 tasks.take().run();

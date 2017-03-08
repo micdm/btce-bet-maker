@@ -1,11 +1,15 @@
-package micdm.btce;
+package micdm.btce.strategies;
+
+import micdm.btce.models.Bet;
+import micdm.btce.models.ImmutableBet;
+import micdm.btce.models.Round;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
 // Стратегия 3: против большинства ставок
-class BetStrategy3 implements BetStrategy {
+public class BetStrategy3 implements BetStrategy {
 
     @Override
     public Set<Bet> getBets(Round round) {

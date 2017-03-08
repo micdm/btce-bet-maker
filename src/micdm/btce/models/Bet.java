@@ -1,11 +1,11 @@
-package micdm.btce;
+package micdm.btce.models;
 
 import org.immutables.value.Value;
 
 import java.math.BigDecimal;
 
 @Value.Immutable
-interface Bet {
+public interface Bet {
 
     enum Type {
         DOWN,

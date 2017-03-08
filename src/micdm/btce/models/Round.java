@@ -1,4 +1,4 @@
-package micdm.btce;
+package micdm.btce.models;
 
 import org.immutables.value.Value;
 import org.joda.time.Duration;
@@ -6,7 +6,7 @@ import org.joda.time.Duration;
 import java.math.BigDecimal;
 
 @Value.Immutable
-interface Round {
+public interface Round {
 
     int number();
     BigDecimal startPrice();

@@ -1,9 +1,11 @@
-package micdm.btce;
+package micdm.btce.test;
 
 import com.google.gson.Gson;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
+import micdm.btce.DataProvider;
+import micdm.btce.models.Round;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

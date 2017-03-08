@@ -1,6 +1,8 @@
-package micdm.btce;
+package micdm.btce.test;
 
 import com.google.gson.*;
+import micdm.btce.models.ImmutableRound;
+import micdm.btce.models.Round;
 
 import java.lang.reflect.Type;
 

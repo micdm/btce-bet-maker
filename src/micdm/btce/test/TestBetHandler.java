@@ -1,6 +1,11 @@
-package micdm.btce;
+package micdm.btce.test;
 
 import io.reactivex.Single;
+import micdm.btce.BetMaker;
+import micdm.btce.DataProvider;
+import micdm.btce.models.Bet;
+import micdm.btce.models.Round;
+import micdm.btce.models.RoundBet;
 
 import java.math.BigDecimal;
 import java.util.Set;

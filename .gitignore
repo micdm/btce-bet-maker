@@ -1,5 +1,5 @@
 .idea/
-generated/
+target/
 out/
 *.iml
 Config.java
