@@ -1,7 +1,7 @@
 package micdm.btce;
 
 import io.reactivex.Flowable;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
@@ -9,10 +9,14 @@ import java.math.BigDecimal;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class BalanceWatcherTest {
+public class BalanceWatcherTest {
+
+    public BalanceWatcherTest() {
+
+    }
 
     @Test
-    void testGetBalanceInfo() {
+    public void testGetBalanceInfo() {
         RemoteDataProvider dataProvider = mock(RemoteDataProvider.class);
         when(dataProvider.getBalance()).thenReturn(
             Flowable.just(

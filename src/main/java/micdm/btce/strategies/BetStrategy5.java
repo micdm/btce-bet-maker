@@ -1,8 +1,8 @@
 package micdm.btce.strategies;
 
 import micdm.btce.models.Bet;
-import micdm.btce.models.ImmutableBet;
 import micdm.btce.models.Round;
+import micdm.btce.models.ImmutableBet;
 
 import java.math.BigDecimal;
 import java.util.HashSet;

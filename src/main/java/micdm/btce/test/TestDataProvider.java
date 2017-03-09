@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
-import micdm.btce.DataProvider;
 import micdm.btce.models.Round;
+import micdm.btce.DataProvider;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -26,7 +26,7 @@ class TestDataProvider implements DataProvider {
         if (source == null) {
             source = Flowable
                 .create((FlowableEmitter<Round> source) -> {
-                    try (BufferedReader reader = new BufferedReader(new FileReader("/home/mic/dev/loto-tools/btce/data/merged.data"))) {
+                    try (BufferedReader reader = new BufferedReader(new FileReader("/home/mic/dev/loto-tools/micdm.btce/data/merged.data"))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
                             source.onNext(gson.fromJson(line, Round.class));

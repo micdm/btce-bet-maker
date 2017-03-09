@@ -2,20 +2,20 @@ package micdm.btce;
 
 import io.reactivex.Flowable;
 import micdm.btce.models.Bet;
-import micdm.btce.models.ImmutableRoundBet;
 import micdm.btce.models.Round;
 import micdm.btce.models.RoundBet;
 import micdm.btce.strategies.BetStrategy;
+import micdm.btce.models.ImmutableRoundBet;
 import org.joda.time.Duration;
 
 public class BetMaker {
 
     private static final Duration TIME_BEFORE_END = Duration.standardSeconds(3);
 
-    private final DataProvider dataProvider;
+    private final micdm.btce.DataProvider dataProvider;
     private final BetStrategy betStrategy;
 
-    BetMaker(DataProvider dataProvider, BetStrategy betStrategy) {
+    BetMaker(micdm.btce.DataProvider dataProvider, BetStrategy betStrategy) {
         this.dataProvider = dataProvider;
         this.betStrategy = betStrategy;
     }

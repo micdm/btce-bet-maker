@@ -1,9 +1,9 @@
 package micdm.btce.strategies;
 
-import micdm.btce.Config;
 import micdm.btce.models.Bet;
-import micdm.btce.models.ImmutableBet;
 import micdm.btce.models.Round;
+import micdm.btce.Config;
+import micdm.btce.models.ImmutableBet;
 import org.slf4j.Logger;
 
 import java.util.Collections;
