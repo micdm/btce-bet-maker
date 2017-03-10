@@ -1,6 +1,8 @@
 package micdm.btce;
 
 import io.reactivex.Flowable;
+import micdm.btce.misc.CommonFunctions;
+import micdm.btce.remote.RemoteDataProvider;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +27,12 @@ public class BalanceWatcherTest {
                 new BigDecimal(7)
             )
         );
-        BalanceWatcher balanceWatcher = new BalanceWatcher(dataProvider, LoggerFactory.getLogger("test"));
-        balanceWatcher.getBalanceInfo().test().assertResult(
-            "Balance: 3 (2 from previous, 2 from start)",
-            "Balance: 7 (4 from previous, 6 from start)"
-        );
+        BalanceWatcher balanceWatcher = new BalanceWatcher(new CommonFunctions(), dataProvider, LoggerFactory.getLogger("test"));
+        balanceWatcher.getBalanceInfo()
+            .test()
+            .assertValues(
+                "Balance: 3 (2 from previous, 2 from start)",
+                "Balance: 7 (4 from previous, 6 from start)"
+            );
     }
 }

@@ -1,4 +1,4 @@
-package micdm.btce;
+package micdm.btce.remote;
 
 import com.google.gson.Gson;
 import com.neovisionaries.ws.client.*;
@@ -6,6 +6,7 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Scheduler;
+import micdm.btce.DataProvider;
 import micdm.btce.models.Round;
 import micdm.btce.models.ImmutableRound;
 import org.joda.time.Duration;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class RemoteDataProvider implements DataProvider {
+public class RemoteDataProvider implements DataProvider {
 
     private static class WebsocketDisconnectedException extends RuntimeException {}
 
@@ -140,7 +141,7 @@ class RemoteDataProvider implements DataProvider {
 
     private Flowable<Object> messages;
 
-    RemoteDataProvider(AccountIdProvider accountIdProvider, Gson gson, Logger logger, Scheduler ioScheduler, WebSocketFactory websocketFactory) {
+    RemoteDataProvider(AccountIdProvider accountIdProvider, Gson gson, Scheduler ioScheduler, Logger logger, WebSocketFactory websocketFactory) {
         this.accountIdProvider = accountIdProvider;
         this.gson = gson;
         this.logger = logger;

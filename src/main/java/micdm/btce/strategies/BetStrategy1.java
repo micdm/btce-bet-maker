@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 // Стратегия 1: чистая случайность
-public class BetStrategy1 implements BetStrategy {
+class BetStrategy1 implements BetStrategy {
 
     @Override
     public Set<Bet> getBets(Round round) {

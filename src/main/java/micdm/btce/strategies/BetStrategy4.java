@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 // Стратегия 4: вслед за большинством по деньгам
-public class BetStrategy4 implements BetStrategy {
+class BetStrategy4 implements BetStrategy {
 
     @Override
     public Set<Bet> getBets(Round round) {

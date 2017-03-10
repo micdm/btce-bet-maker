@@ -12,10 +12,10 @@ public class BetMaker {
 
     private static final Duration TIME_BEFORE_END = Duration.standardSeconds(3);
 
-    private final micdm.btce.DataProvider dataProvider;
     private final BetStrategy betStrategy;
+    private final DataProvider dataProvider;
 
-    BetMaker(micdm.btce.DataProvider dataProvider, BetStrategy betStrategy) {
+    BetMaker(BetStrategy betStrategy, DataProvider dataProvider) {
         this.dataProvider = dataProvider;
         this.betStrategy = betStrategy;
     }

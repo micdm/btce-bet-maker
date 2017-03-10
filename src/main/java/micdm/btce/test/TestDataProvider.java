@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
-import micdm.btce.models.Round;
 import micdm.btce.DataProvider;
+import micdm.btce.models.Round;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -13,12 +13,16 @@ import java.math.BigDecimal;
 
 class TestDataProvider implements DataProvider {
 
+    private final BalanceBuffer balanceBuffer;
     private final Gson gson;
+    private final String pathToData;
 
     private Flowable<Round> source;
 
-    TestDataProvider(Gson gson) {
+    TestDataProvider(BalanceBuffer balanceBuffer, Gson gson, String pathToData) {
+        this.balanceBuffer = balanceBuffer;
         this.gson = gson;
+        this.pathToData = pathToData;
     }
 
     @Override
@@ -26,7 +30,7 @@ class TestDataProvider implements DataProvider {
         if (source == null) {
             source = Flowable
                 .create((FlowableEmitter<Round> source) -> {
-                    try (BufferedReader reader = new BufferedReader(new FileReader("/home/mic/dev/loto-tools/micdm.btce/data/merged.data"))) {
+                    try (BufferedReader reader = new BufferedReader(new FileReader(pathToData))) {
                         String line;
                         while ((line = reader.readLine()) != null) {
                             source.onNext(gson.fromJson(line, Round.class));
@@ -36,6 +40,7 @@ class TestDataProvider implements DataProvider {
                         source.onError(e);
                     }
                 }, BackpressureStrategy.BUFFER)
+                .takeLast(500)
                 .replay()
                 .autoConnect();
         }
@@ -44,6 +49,6 @@ class TestDataProvider implements DataProvider {
 
     @Override
     public Flowable<BigDecimal> getBalance() {
-        return Flowable.empty();
+        return balanceBuffer.getBalance();
     }
 }

@@ -1,4 +1,4 @@
-package micdm.btce.misc;
+package micdm.btce.remote;
 
 import com.google.gson.Gson;
 import okhttp3.Cookie;

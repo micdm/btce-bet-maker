@@ -11,7 +11,7 @@ public class MainThreadExecutor implements Executor {
     private final Logger logger;
     private final BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
 
-    public MainThreadExecutor(Logger logger) {
+    MainThreadExecutor(Logger logger) {
         this.logger = logger;
     }
 

@@ -1,9 +1,11 @@
-package micdm.btce;
+package micdm.btce.remote;
 
 import com.google.gson.Gson;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
+import micdm.btce.Config;
+import micdm.btce.misc.Irrelevant;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -56,20 +58,22 @@ class Authenticator {
     private static final String PASSWORD_FIELD = "password";
     private static final String NONCE_FIELD = "PoW_nonce";
 
+    private final Config config;
     private final Gson gson;
+    private final Scheduler ioScheduler;
     private final Logger logger;
     private final MessageDigest messageDigest;
-    private final OkHttpClient httpClient;
-    private final Scheduler ioScheduler;
+    private final OkHttpClient okHttpClient;
 
     private Flowable<Object> cached;
 
-    Authenticator(Gson gson, Logger logger, MessageDigest messageDigest, OkHttpClient httpClient, Scheduler ioScheduler) {
+    Authenticator(Config config, Gson gson, Scheduler ioScheduler, Logger logger, MessageDigest messageDigest, OkHttpClient okHttpClient) {
+        this.config = config;
         this.gson = gson;
+        this.ioScheduler = ioScheduler;
         this.logger = logger;
         this.messageDigest = messageDigest;
-        this.httpClient = httpClient;
-        this.ioScheduler = ioScheduler;
+        this.okHttpClient = okHttpClient;
     }
 
     Flowable<Object> run() {
@@ -86,12 +90,12 @@ class Authenticator {
         return Flowable
             .<Integer>create(source -> {
                 logger.debug("Loading nonce data...");
-                Response response = httpClient.newCall(
+                Response response = okHttpClient.newCall(
                     new Request.Builder()
                         .post(
                             new FormBody.Builder()
-                                .add(LOGIN_FIELD, Config.LOGIN)
-                                .add(PASSWORD_FIELD, Config.PASSWORD)
+                                .add(LOGIN_FIELD, config.LOGIN)
+                                .add(PASSWORD_FIELD, config.PASSWORD)
                                 .build()
                         )
                         .url(LOGIN_URL)
@@ -136,12 +140,12 @@ class Authenticator {
         return Flowable
             .create(source -> {
                 logger.debug("Logging in with nonce {}...", nonce);
-                Response response = httpClient.newCall(
+                Response response = okHttpClient.newCall(
                     new Request.Builder()
                         .post(
                             new FormBody.Builder()
-                                .add(LOGIN_FIELD, Config.LOGIN)
-                                .add(PASSWORD_FIELD, Config.PASSWORD)
+                                .add(LOGIN_FIELD, config.LOGIN)
+                                .add(PASSWORD_FIELD, config.PASSWORD)
                                 .add(NONCE_FIELD, String.valueOf(nonce))
                                 .build()
                         )

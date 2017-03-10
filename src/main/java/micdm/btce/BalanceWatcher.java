@@ -1,46 +1,33 @@
 package micdm.btce;
 
 import io.reactivex.Flowable;
+import micdm.btce.misc.CommonFunctions;
 import org.slf4j.Logger;
-
-import java.math.BigDecimal;
 
 class BalanceWatcher {
 
-    private static class BalanceAndBalance {
-
-        final BigDecimal previousBalance;
-        final BigDecimal newBalance;
-
-        BalanceAndBalance(BigDecimal previousBalance, BigDecimal newBalance) {
-            this.previousBalance = previousBalance;
-            this.newBalance = newBalance;
-        }
-    }
-
+    private final CommonFunctions commonFunctions;
     private final DataProvider dataProvider;
     private final Logger logger;
 
-    BalanceWatcher(DataProvider dataProvider, Logger logger) {
+    BalanceWatcher(CommonFunctions commonFunctions, DataProvider dataProvider, Logger logger) {
+        this.commonFunctions = commonFunctions;
         this.dataProvider = dataProvider;
         this.logger = logger;
     }
 
     void init() {
-        getBalanceInfo().subscribe(logger::info);
+        getBalanceInfo().subscribe(logger::warn);
     }
 
     Flowable<String> getBalanceInfo() {
-        return Flowable.combineLatest(
-            dataProvider.getBalance().take(1),
-            dataProvider.getBalance()
-                .scan(new BalanceAndBalance(null, null), (accumulated, balance) ->
-                    new BalanceAndBalance(accumulated.newBalance, balance)
-                )
-                .skip(2),
-            (startBalance, bab) ->
-                String.format("Balance: %s (%s from previous, %s from start)", bab.newBalance, bab.newBalance.subtract(bab.previousBalance),
-                              bab.newBalance.subtract(startBalance))
+        return Flowable.zip(
+            dataProvider.getBalance().skip(1),
+            dataProvider.getBalance().compose(commonFunctions.getPrevious()),
+            dataProvider.getBalance().take(1).switchMap(commonFunctions::only),
+            (newBalance, previousBalance, startBalance) ->
+                String.format("Balance: %s (%s from previous, %s from start)", newBalance, newBalance.subtract(previousBalance),
+                              newBalance.subtract(startBalance))
         );
     }
 }

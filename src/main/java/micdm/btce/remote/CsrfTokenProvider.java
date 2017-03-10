@@ -1,4 +1,4 @@
-package micdm.btce;
+package micdm.btce.remote;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -10,26 +10,26 @@ import okhttp3.Response;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class AccountIdProvider {
+class CsrfTokenProvider {
 
     private static final String DATA_URL = "https://btc-e.nz/bets";
-    private static final Pattern PATTERN = Pattern.compile("_pusher.subscribe\\(\"([a-f0-9]{64})\"\\)");
+    private static final Pattern PATTERN = Pattern.compile("id=\"csrf-token\" value=\"([a-f0-9]+)");
 
     private final Authenticator authenticator;
     private final Scheduler ioScheduler;
-    private final OkHttpClient httpClient;
+    private final OkHttpClient okHttpClient;
 
-    AccountIdProvider(Authenticator authenticator, Scheduler ioScheduler, OkHttpClient httpClient) {
+    CsrfTokenProvider(Authenticator authenticator, Scheduler ioScheduler, OkHttpClient okHttpClient) {
         this.authenticator = authenticator;
         this.ioScheduler = ioScheduler;
-        this.httpClient = httpClient;
+        this.okHttpClient = okHttpClient;
     }
 
-    Flowable<String> getAccountId() {
+    Flowable<String> getToken() {
         return authenticator.run().flatMap(o ->
             Flowable
                 .<String>create(source -> {
-                    Response response = httpClient.newCall(
+                    Response response = okHttpClient.newCall(
                         new Request.Builder()
                             .get()
                             .url(DATA_URL)
@@ -37,7 +37,7 @@ class AccountIdProvider {
                     ).execute();
                     Matcher matcher = PATTERN.matcher(response.body().string());
                     if (!matcher.find()) {
-                        source.onError(new IllegalStateException("cannot find account ID"));
+                        source.onError(new IllegalStateException("cannot find CSRF token"));
                     } else {
                         source.onNext(matcher.group(1));
                         source.onComplete();

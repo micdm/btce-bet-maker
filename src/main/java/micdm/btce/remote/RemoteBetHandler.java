@@ -1,6 +1,8 @@
-package micdm.btce;
+package micdm.btce.remote;
 
 import com.google.gson.Gson;
+import micdm.btce.BetHandler;
+import micdm.btce.BetMaker;
 import micdm.btce.models.Bet;
 import micdm.btce.models.RoundBet;
 import okhttp3.*;
@@ -9,7 +11,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-class RemoteBetHandler {
+class RemoteBetHandler implements BetHandler {
 
     private static class RoundBetAndCsrfToken {
 

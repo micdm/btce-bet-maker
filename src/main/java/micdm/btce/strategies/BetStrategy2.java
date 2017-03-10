@@ -6,17 +6,20 @@ import micdm.btce.Config;
 import micdm.btce.models.ImmutableBet;
 import org.slf4j.Logger;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
 // Стратегия 2: вслед за большинством ставок
-public class BetStrategy2 implements BetStrategy {
+class BetStrategy2 implements BetStrategy {
 
+    private final Config config;
     private final Logger logger;
 
-    public BetStrategy2(Logger logger) {
+    BetStrategy2(Config config, Logger logger) {
+        this.config = config;
         this.logger = logger;
     }
 
@@ -30,7 +33,7 @@ public class BetStrategy2 implements BetStrategy {
         bets.add(
             ImmutableBet.builder()
                 .type(type.get())
-                .amount(Config.BET_AMOUNT)
+                .amount(getAmount(round, type.get()))
                 .build()
         );
         return bets;
@@ -38,16 +41,20 @@ public class BetStrategy2 implements BetStrategy {
 
     private Optional<Bet.Type> getType(Round round) {
         int delta = Math.abs(round.downCount() - round.upCount());
-        if (delta < Config.BET_COUNT_DELTA) {
+        if (delta < config.BET_COUNT_DELTA) {
             logger.info("Bet count delta is too low ({}), skipping", delta);
             return Optional.empty();
         }
         if (round.downCount() > round.upCount()) {
-            logger.info("Making bet for DOWN ({} vs {})", round.downCount(), round.upCount());
+            logger.info("Making bet for DOWN ({} vs {}) for round {}", round.downCount(), round.upCount(), round.number());
             return Optional.of(Bet.Type.DOWN);
         } else {
-            logger.info("Making bet for UP ({} vs {})", round.downCount(), round.upCount());
+            logger.info("Making bet for UP ({} vs {}) for round {}", round.downCount(), round.upCount(), round.number());
             return Optional.of(Bet.Type.UP);
         }
+    }
+
+    private BigDecimal getAmount(Round round, Bet.Type betType) {
+        return config.BET_AMOUNT;
     }
 }
