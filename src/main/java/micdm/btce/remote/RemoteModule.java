@@ -88,7 +88,9 @@ public class RemoteModule {
     @Provides
     @Singleton
     BetHandler provideBetHandler(Authenticator authenticator, BetMaker betMaker, CsrfTokenProvider csrfTokenProvider, Gson gson, Logger logger, OkHttpClient okHttpClient) {
-        return new RemoteBetHandler(authenticator, betMaker, csrfTokenProvider, gson, logger, okHttpClient);
+        RemoteBetHandler instance = new RemoteBetHandler(authenticator, betMaker, csrfTokenProvider, gson, logger, okHttpClient);
+        instance.init();
+        return instance;
     }
 
     @Provides
