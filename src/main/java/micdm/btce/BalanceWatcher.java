@@ -17,7 +17,7 @@ class BalanceWatcher {
     }
 
     void init() {
-        getBalanceInfo().subscribe(logger::warn);
+        getBalanceInfo().subscribe(logger::info);
     }
 
     Flowable<String> getBalanceInfo() {
