@@ -1,5 +1,6 @@
 package micdm.btce;
 
+import micdm.btce.remote.console.ConsoleModule;
 import micdm.btce.test.TestModule;
 
 public class Main {
@@ -22,7 +23,9 @@ public class Main {
     }
 
     private static void runMain() {
-        MainComponent component = DaggerMainComponent.builder().build();
+        MainComponent component = DaggerMainComponent.builder()
+            .consoleModule(new ConsoleModule(12000))
+            .build();
         component.getBalanceWatcher();
         component.getBetHandler();
         component.getRoundWatcher();

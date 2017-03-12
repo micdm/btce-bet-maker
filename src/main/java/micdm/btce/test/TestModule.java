@@ -5,9 +5,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dagger.Module;
 import dagger.Provides;
+import io.reactivex.Flowable;
 import micdm.btce.BetHandler;
 import micdm.btce.BetMaker;
 import micdm.btce.DataProvider;
+import micdm.btce.SystemSettings;
 import micdm.btce.models.Round;
 
 import javax.inject.Singleton;
@@ -54,5 +56,16 @@ public class TestModule {
     @Singleton
     BalanceBuffer provideBalanceBuffer() {
         return new BalanceBuffer();
+    }
+
+    @Provides
+    @Singleton
+    SystemSettings provideSystemSettings() {
+        return new SystemSettings() {
+            @Override
+            public Flowable<Boolean> isBettingEnabled() {
+                return Flowable.just(true);
+            }
+        };
     }
 }

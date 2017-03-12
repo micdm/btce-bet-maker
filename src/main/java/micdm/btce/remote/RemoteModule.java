@@ -7,19 +7,20 @@ import com.neovisionaries.ws.client.WebSocketFactory;
 import dagger.Module;
 import dagger.Provides;
 import io.reactivex.Scheduler;
-import micdm.btce.BetHandler;
-import micdm.btce.BetMaker;
-import micdm.btce.Config;
-import micdm.btce.DataProvider;
+import micdm.btce.*;
+import micdm.btce.misc.CommonFunctions;
+import micdm.btce.remote.console.ConsoleModule;
+import micdm.btce.remote.console.UserConsole;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.slf4j.Logger;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-@Module
+@Module(includes = {ConsoleModule.class})
 public class RemoteModule {
 
     @Provides
@@ -69,19 +70,19 @@ public class RemoteModule {
 
     @Provides
     @Singleton
-    AccountIdProvider provideAccountIdProvider(Authenticator authenticator, Scheduler ioScheduler, OkHttpClient okHttpClient) {
+    AccountIdProvider provideAccountIdProvider(Authenticator authenticator, @Named("io") Scheduler ioScheduler, OkHttpClient okHttpClient) {
         return new AccountIdProvider(authenticator, ioScheduler, okHttpClient);
     }
 
     @Provides
     @Singleton
-    Authenticator provideAuthenticator(Config config, Gson gson, Scheduler ioScheduler, Logger logger, MessageDigest messageDigest, OkHttpClient okHttpClient) {
+    Authenticator provideAuthenticator(Config config, Gson gson, @Named("io") Scheduler ioScheduler, Logger logger, MessageDigest messageDigest, OkHttpClient okHttpClient) {
         return new Authenticator(config, gson, ioScheduler, logger, messageDigest, okHttpClient);
     }
 
     @Provides
     @Singleton
-    CsrfTokenProvider provideCsrfTokenProvider(Authenticator authenticator, Scheduler ioScheduler, OkHttpClient okHttpClient) {
+    CsrfTokenProvider provideCsrfTokenProvider(Authenticator authenticator, @Named("io") Scheduler ioScheduler, OkHttpClient okHttpClient) {
         return new CsrfTokenProvider(authenticator, ioScheduler, okHttpClient);
     }
 
@@ -95,7 +96,13 @@ public class RemoteModule {
 
     @Provides
     @Singleton
-    DataProvider provideDataProvider(AccountIdProvider accountIdProvider, Gson gson, Scheduler ioScheduler, Logger logger, WebSocketFactory webSocketFactory) {
+    DataProvider provideDataProvider(AccountIdProvider accountIdProvider, Gson gson, @Named("io") Scheduler ioScheduler, Logger logger, WebSocketFactory webSocketFactory) {
         return new RemoteDataProvider(accountIdProvider, gson, ioScheduler, logger, webSocketFactory);
+    }
+
+    @Provides
+    @Singleton
+    SystemSettings provideSystemSettings(CommonFunctions commonFunctions, UserConsole userConsole) {
+        return new RemoteSystemSettings(commonFunctions, userConsole);
     }
 }

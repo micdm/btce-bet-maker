@@ -2,11 +2,32 @@ package micdm.btce.misc;
 
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
+import io.reactivex.functions.Predicate;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 public class CommonFunctions {
+
+    public boolean toTrue(Object o) {
+        return true;
+    }
+
+    public boolean toFalse(Object o) {
+        return false;
+    }
+
+    public boolean isTrue(boolean value) {
+        return value;
+    }
+
+    public boolean isFalse(boolean value) {
+        return !value;
+    }
+
+    public <T> Predicate<T> isEqual(T value) {
+        return value::equals;
+    }
 
     public <T> FlowableTransformer<T, T> getPrevious() {
         return flowable -> flowable

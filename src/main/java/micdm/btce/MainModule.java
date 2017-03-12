@@ -9,6 +9,7 @@ import micdm.btce.strategies.BetStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 @Module
@@ -38,8 +39,8 @@ class MainModule {
 
     @Provides
     @Singleton
-    BetMaker provideBetMaker(BetStrategy betStrategy, DataProvider dataProvider) {
-        return new BetMaker(betStrategy, dataProvider);
+    BetMaker provideBetMaker(BetStrategy betStrategy, DataProvider dataProvider, SystemSettings systemSettings) {
+        return new BetMaker(betStrategy, dataProvider, systemSettings);
     }
 
     @Provides
@@ -49,8 +50,16 @@ class MainModule {
     }
 
     @Provides
+    @Named("io")
     @Singleton
     Scheduler provideIoScheduler() {
         return Schedulers.io();
+    }
+
+    @Provides
+    @Named("newThread")
+    @Singleton
+    Scheduler provideNewThreadScheduler() {
+        return Schedulers.newThread();
     }
 }
