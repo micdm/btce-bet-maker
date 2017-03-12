@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 
 @Module
@@ -31,7 +32,7 @@ public class ConsoleModule {
     @Singleton
     ServerSocket provideServerSocket() {
         try {
-            return new ServerSocket(bindPort);
+            return new ServerSocket(bindPort, 0, InetAddress.getLoopbackAddress());
         } catch (IOException e) {
             throw new IllegalStateException(String.format("cannot bind to %s", bindPort));
         }
