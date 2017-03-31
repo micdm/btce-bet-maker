@@ -41,6 +41,7 @@ class RemoteBetHandler implements BetHandler {
     private static final String CSRF_TOKEN_FIELD = "csrfToken";
     private static final String ACTION_FIELD = "act";
     private static final String PERIOD_ID_FIELD = "period_id";
+    private static final String CURRENCY_FIELD = "currency";
     private static final String BET_TYPE_FIELD = "type";
     private static final String BET_AMOUNT_FIELD = "amount";
 
@@ -84,6 +85,7 @@ class RemoteBetHandler implements BetHandler {
                             .add(CSRF_TOKEN_FIELD, csrfToken)
                             .add(ACTION_FIELD, "bet")
                             .add(PERIOD_ID_FIELD, String.valueOf(round))
+                            .add(CURRENCY_FIELD, "2")
                             .add(BET_TYPE_FIELD, type == Bet.Type.DOWN ? "1" : "0")
                             .add(BET_AMOUNT_FIELD, String.valueOf(amount))
                             .build()

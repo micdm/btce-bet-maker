@@ -111,10 +111,10 @@ public class RemoteDataProvider implements DataProvider {
 
     private static class AccountUpdateData {
 
-        final BigDecimal balance2;
+        final Map<String, BigDecimal> balance;
 
-        AccountUpdateData(BigDecimal balance2) {
-            this.balance2 = balance2;
+        private AccountUpdateData(Map<String, BigDecimal> balance) {
+            this.balance = balance;
         }
     }
 
@@ -315,6 +315,6 @@ public class RemoteDataProvider implements DataProvider {
 
     @Override
     public Flowable<BigDecimal> getBalance() {
-        return getMessages().ofType(AccountUpdateData.class).map(accountUpdateData -> accountUpdateData.balance2);
+        return getMessages().ofType(AccountUpdateData.class).map(accountUpdateData -> accountUpdateData.balance.get("2"));
     }
 }
