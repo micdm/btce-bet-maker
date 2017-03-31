@@ -7,15 +7,15 @@ public class Main {
 
     public static void main(String[] args) {
         if (args.length != 0 && args[0].equals("test")) {
-            runTest();
+            runTest(args[1]);
         } else {
             runMain();
         }
     }
 
-    private static void runTest() {
+    private static void runTest(String pathToDataFile) {
         TestComponent component = DaggerTestComponent.builder()
-            .testModule(new TestModule("/home/mic/dev/loto-tools/btce/data/merged.data"))
+            .testModule(new TestModule(pathToDataFile))
             .build();
         component.getBalanceWatcher();
         component.getBetHandler();

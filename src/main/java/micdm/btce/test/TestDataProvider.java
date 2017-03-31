@@ -40,7 +40,7 @@ class TestDataProvider implements DataProvider {
                         source.onError(e);
                     }
                 }, BackpressureStrategy.BUFFER)
-                .takeLast(500)
+                .takeLast(280)
                 .replay()
                 .autoConnect();
         }
