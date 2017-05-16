@@ -1,6 +1,7 @@
 package micdm.btce;
 
 import io.reactivex.Flowable;
+import micdm.btce.misc.CommonFunctions;
 import micdm.btce.models.Bet;
 import micdm.btce.models.ImmutableRoundBet;
 import micdm.btce.models.Round;
@@ -13,10 +14,12 @@ public class BetMaker {
     private static final Duration TIME_BEFORE_END = Duration.standardSeconds(3);
 
     private final BetStrategy betStrategy;
+    private final CommonFunctions commonFunctions;
     private final DataProvider dataProvider;
     private final SystemSettings systemSettings;
 
-    BetMaker(BetStrategy betStrategy, DataProvider dataProvider, SystemSettings systemSettings) {
+    BetMaker(BetStrategy betStrategy, CommonFunctions commonFunctions, DataProvider dataProvider, SystemSettings systemSettings) {
+        this.commonFunctions = commonFunctions;
         this.dataProvider = dataProvider;
         this.betStrategy = betStrategy;
         this.systemSettings = systemSettings;
@@ -31,17 +34,21 @@ public class BetMaker {
         return dataProvider.getRounds()
             .filter(round -> round.endsIn().isShorterThan(TIME_BEFORE_END))
             .distinctUntilChanged(Round::number)
-            .map(round -> {
-                ImmutableRoundBet.Builder builder = ImmutableRoundBet.builder().number(round.number());
-                for (Bet bet: betStrategy.getBets(round)) {
-                    if (bet.type() == Bet.Type.DOWN) {
-                        builder.addDownBets(bet);
-                    }
-                    if (bet.type() == Bet.Type.UP) {
-                        builder.addUpBets(bet);
-                    }
-                }
-                return builder.build();
-            });
+            .concatMap(round ->
+                betStrategy.getBets(round)
+                    .map(bets -> {
+                        ImmutableRoundBet.Builder builder = ImmutableRoundBet.builder().number(round.number());
+                        for (Bet bet: bets) {
+                            if (bet.type() == Bet.Type.DOWN) {
+                                builder.addDownBets(bet);
+                            }
+                            if (bet.type() == Bet.Type.UP) {
+                                builder.addUpBets(bet);
+                            }
+                        }
+                        return builder.build();
+                    })
+                    .toFlowable()
+            );
     }
 }

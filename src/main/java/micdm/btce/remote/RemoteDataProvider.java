@@ -7,8 +7,8 @@ import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Scheduler;
 import micdm.btce.DataProvider;
-import micdm.btce.models.Round;
 import micdm.btce.models.ImmutableRound;
+import micdm.btce.models.Round;
 import org.joda.time.Duration;
 import org.slf4j.Logger;
 

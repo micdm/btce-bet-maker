@@ -1,8 +1,9 @@
 package micdm.btce.test;
 
 import com.google.gson.*;
-import micdm.btce.models.Round;
 import micdm.btce.models.ImmutableRound;
+import micdm.btce.models.Round;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 import java.lang.reflect.Type;
@@ -20,6 +21,7 @@ class RoundTypeAdapter implements JsonDeserializer<Round> {
             .downAmount(object.get("amounts").getAsJsonArray().get(1).getAsBigDecimal())
             .upCount(object.get("bets").getAsJsonArray().get(0).getAsInt())
             .upAmount(object.get("amounts").getAsJsonArray().get(0).getAsBigDecimal())
+            .startTime(DateTime.parse(object.get("start_time").getAsString()))
             .endsIn(Duration.standardSeconds(1))
             .build();
     }

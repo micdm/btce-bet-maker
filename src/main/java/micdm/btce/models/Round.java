@@ -1,6 +1,7 @@
 package micdm.btce.models;
 
 import org.immutables.value.Value;
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 import java.math.BigDecimal;
@@ -15,5 +16,6 @@ public interface Round {
     BigDecimal downAmount();
     int upCount();
     BigDecimal upAmount();
+    DateTime startTime();
     Duration endsIn();
 }

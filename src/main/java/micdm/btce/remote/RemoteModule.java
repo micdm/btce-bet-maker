@@ -11,6 +11,7 @@ import micdm.btce.*;
 import micdm.btce.misc.CommonFunctions;
 import micdm.btce.remote.console.ConsoleModule;
 import micdm.btce.remote.console.UserConsole;
+import micdm.btce.strategies.BetStrategy;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.slf4j.Logger;
@@ -19,12 +20,14 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 @Module(includes = {ConsoleModule.class})
 public class RemoteModule {
 
     @Provides
     @Singleton
+    @Named("remote")
     OkHttpClient provideOkHttpClient(CookieStore cookieStore, Logger logger) {
         return new OkHttpClient.Builder()
             .addInterceptor(chain -> {
@@ -70,25 +73,25 @@ public class RemoteModule {
 
     @Provides
     @Singleton
-    AccountIdProvider provideAccountIdProvider(Authenticator authenticator, @Named("io") Scheduler ioScheduler, OkHttpClient okHttpClient) {
+    AccountIdProvider provideAccountIdProvider(Authenticator authenticator, @Named("io") Scheduler ioScheduler, @Named("remote") OkHttpClient okHttpClient) {
         return new AccountIdProvider(authenticator, ioScheduler, okHttpClient);
     }
 
     @Provides
     @Singleton
-    Authenticator provideAuthenticator(Config config, Gson gson, @Named("io") Scheduler ioScheduler, Logger logger, MessageDigest messageDigest, OkHttpClient okHttpClient) {
+    Authenticator provideAuthenticator(Config config, Gson gson, @Named("io") Scheduler ioScheduler, Logger logger, MessageDigest messageDigest, @Named("remote") OkHttpClient okHttpClient) {
         return new Authenticator(config, gson, ioScheduler, logger, messageDigest, okHttpClient);
     }
 
     @Provides
     @Singleton
-    CsrfTokenProvider provideCsrfTokenProvider(Authenticator authenticator, @Named("io") Scheduler ioScheduler, OkHttpClient okHttpClient) {
+    CsrfTokenProvider provideCsrfTokenProvider(Authenticator authenticator, @Named("io") Scheduler ioScheduler, @Named("remote") OkHttpClient okHttpClient) {
         return new CsrfTokenProvider(authenticator, ioScheduler, okHttpClient);
     }
 
     @Provides
     @Singleton
-    BetHandler provideBetHandler(Authenticator authenticator, BetMaker betMaker, CsrfTokenProvider csrfTokenProvider, Gson gson, Logger logger, OkHttpClient okHttpClient) {
+    BetHandler provideBetHandler(Authenticator authenticator, BetMaker betMaker, CsrfTokenProvider csrfTokenProvider, Gson gson, Logger logger, @Named("remote") OkHttpClient okHttpClient) {
         RemoteBetHandler instance = new RemoteBetHandler(authenticator, betMaker, csrfTokenProvider, gson, logger, okHttpClient);
         instance.init();
         return instance;
@@ -104,5 +107,11 @@ public class RemoteModule {
     @Singleton
     SystemSettings provideSystemSettings(CommonFunctions commonFunctions, UserConsole userConsole) {
         return new RemoteSystemSettings(commonFunctions, userConsole);
+    }
+
+    @Provides
+    @Singleton
+    BetStrategy provideCurrentBetStrategy(Map<Integer, BetStrategy> strategies) {
+        return strategies.get(2);
     }
 }

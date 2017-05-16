@@ -39,8 +39,8 @@ class MainModule {
 
     @Provides
     @Singleton
-    BetMaker provideBetMaker(BetStrategy betStrategy, DataProvider dataProvider, SystemSettings systemSettings) {
-        return new BetMaker(betStrategy, dataProvider, systemSettings);
+    BetMaker provideBetMaker(BetStrategy betStrategy, CommonFunctions commonFunctions, DataProvider dataProvider, SystemSettings systemSettings) {
+        return new BetMaker(betStrategy, commonFunctions, dataProvider, systemSettings);
     }
 
     @Provides

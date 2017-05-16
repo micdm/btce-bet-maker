@@ -11,16 +11,20 @@ import micdm.btce.BetMaker;
 import micdm.btce.DataProvider;
 import micdm.btce.SystemSettings;
 import micdm.btce.models.Round;
+import micdm.btce.strategies.BetStrategy;
 
 import javax.inject.Singleton;
+import java.util.Map;
 
 @Module
 public class TestModule {
 
     private final String pathToData;
+    private final int currentBetStrategy;
 
-    public TestModule(String pathToData) {
+    public TestModule(String pathToData, int currentBetStrategy) {
         this.pathToData = pathToData;
+        this.currentBetStrategy = currentBetStrategy;
     }
 
     @Provides
@@ -67,5 +71,11 @@ public class TestModule {
                 return Flowable.just(true);
             }
         };
+    }
+
+    @Provides
+    @Singleton
+    BetStrategy provideCurrentBetStrategy(Map<Integer, BetStrategy> strategies) {
+        return strategies.get(currentBetStrategy);
     }
 }

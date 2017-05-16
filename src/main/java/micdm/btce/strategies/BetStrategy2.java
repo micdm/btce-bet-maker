@@ -1,5 +1,6 @@
 package micdm.btce.strategies;
 
+import io.reactivex.Maybe;
 import micdm.btce.Config;
 import micdm.btce.models.Bet;
 import micdm.btce.models.ImmutableBet;
@@ -9,15 +10,13 @@ import org.slf4j.Logger;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 // Стратегия 2: вслед за большинством ставок
 class BetStrategy2 implements BetStrategy {
 
     private static final MathContext RATIO_MAX_CONTEXT = new MathContext(6, RoundingMode.DOWN);
+    private static final BigDecimal MIN_RATIO = new BigDecimal("1.05");
 
     private final Config config;
     private final Logger logger;
@@ -28,19 +27,23 @@ class BetStrategy2 implements BetStrategy {
     }
 
     @Override
-    public Set<Bet> getBets(Round round) {
+    public Maybe<Collection<Bet>> getBets(Round round) {
         Optional<Bet.Type> type = getType(round);
         if (!type.isPresent()) {
-            return Collections.emptySet();
+            return Maybe.empty();
         }
-        Set<Bet> bets = new HashSet<>();
+        Optional<BigDecimal> amount = getAmount(round, type.get());
+        if (!amount.isPresent()) {
+            return Maybe.empty();
+        }
+        Collection<Bet> bets = new HashSet<>();
         bets.add(
             ImmutableBet.builder()
                 .type(type.get())
-                .amount(getAmount(round, type.get()))
+                .amount(amount.get())
                 .build()
         );
-        return bets;
+        return Maybe.just(bets);
     }
 
     private Optional<Bet.Type> getType(Round round) {
@@ -58,7 +61,7 @@ class BetStrategy2 implements BetStrategy {
         }
     }
 
-    private BigDecimal getAmount(Round round, Bet.Type betType) {
+    private Optional<BigDecimal> getAmount(Round round, Bet.Type betType) {
         BigDecimal ratio;
         if (betType == Bet.Type.DOWN) {
             ratio = round.upAmount().divide(round.downAmount(), RATIO_MAX_CONTEXT);
@@ -66,6 +69,10 @@ class BetStrategy2 implements BetStrategy {
             ratio = round.downAmount().divide(round.upAmount(), RATIO_MAX_CONTEXT);
         }
         logger.debug("Ratio is {} ({} / {})", ratio, round.downAmount(), round.upAmount());
-        return (ratio.compareTo(BigDecimal.ONE)) > 0 ? config.MAX_BET_AMOUNT : config.MIN_BET_AMOUNT;
+        if (ratio.compareTo(MIN_RATIO) < 0) {
+            logger.debug("Ratio is too small, skipping");
+            return Optional.empty();
+        }
+        return Optional.of((ratio.compareTo(BigDecimal.ONE)) > 0 ? config.MIN_BET_AMOUNT : config.MIN_BET_AMOUNT);
     }
 }
