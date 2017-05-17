@@ -29,7 +29,7 @@ public class StrategyModule {
     @IntoMap
     @IntKey(2)
     BetStrategy provideBetStrategy2(Config config, Logger logger) {
-        return new BetStrategy2(config, logger);
+        return new BetStrategy2(config, config.strategy2Config, logger);
     }
 
     @Provides
@@ -61,7 +61,15 @@ public class StrategyModule {
     @IntoMap
     @IntKey(6)
     BetStrategy provideBetStrategy6(Config config, Logger logger, NeuralNetworkConnector neuralNetworkConnector) {
-        return new BetStrategy6(config, logger, neuralNetworkConnector);
+        return new BetStrategy6(config, config.strategy6Config, logger, neuralNetworkConnector);
+    }
+
+    @Provides
+    @Singleton
+    @IntoMap
+    @IntKey(7)
+    BetStrategy provideBetStrategy7(Logger logger) {
+        return new BetStrategy7(logger);
     }
 
     @Provides

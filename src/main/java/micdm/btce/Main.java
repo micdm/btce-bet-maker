@@ -24,7 +24,7 @@ public class Main {
 
     private static void runMain() {
         MainComponent component = DaggerMainComponent.builder()
-            .consoleModule(new ConsoleModule(12000))
+            .consoleModule(new ConsoleModule(12001))
             .build();
         component.getBalanceWatcher();
         component.getBetHandler();

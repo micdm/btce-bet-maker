@@ -12,10 +12,10 @@ class NeuralNetworkConnector {
 
     static class Probabilities {
 
-        final float decrease;
-        final float increase;
+        final double decrease;
+        final double increase;
 
-        Probabilities(float decrease, float increase) {
+        Probabilities(double decrease, double increase) {
             this.decrease = decrease;
             this.increase = increase;
         }
@@ -39,7 +39,7 @@ class NeuralNetworkConnector {
             Call call = okHttpClient.newCall(
                 requestBuilder
                     .url(String.format("%s/predict/%s,%s,%s,%s,%s,%s", config.NEURAL_NETWORK_URL, downAmount, upAmount,
-                        downCount, upCount, dayOfWeek, minuteOfDay))
+                        downCount, upCount, dayOfWeek - 1, minuteOfDay))
                     .build()
             );
             call.enqueue(new Callback() {
@@ -51,8 +51,8 @@ class NeuralNetworkConnector {
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     String[] parts = response.body().string().split("\n");
-                    logger.debug("Probabilities are {} for decrease and {} for increase", parts[0], parts[1]);
-                    source.onSuccess(new Probabilities(Float.valueOf(parts[0]), Float.valueOf(parts[1])));
+                    logger.debug("Probabilities are {} for decrease and {} for increase", parts[1], parts[0]);
+                    source.onSuccess(new Probabilities(Double.valueOf(parts[1]), Double.valueOf(parts[0])));
                 }
             });
             source.setCancellable(call::cancel);

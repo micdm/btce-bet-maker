@@ -112,6 +112,6 @@ public class RemoteModule {
     @Provides
     @Singleton
     BetStrategy provideCurrentBetStrategy(Map<Integer, BetStrategy> strategies) {
-        return strategies.get(2);
+        return strategies.get(6);
     }
 }

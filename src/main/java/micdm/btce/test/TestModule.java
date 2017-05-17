@@ -12,6 +12,7 @@ import micdm.btce.DataProvider;
 import micdm.btce.SystemSettings;
 import micdm.btce.models.Round;
 import micdm.btce.strategies.BetStrategy;
+import org.slf4j.Logger;
 
 import javax.inject.Singleton;
 import java.util.Map;
@@ -50,8 +51,8 @@ public class TestModule {
 
     @Provides
     @Singleton
-    BetHandler provideBetHandler(BalanceBuffer balanceBuffer, BetMaker betMaker, DataProvider dataProvider) {
-        TestBetHandler instance = new TestBetHandler(balanceBuffer, betMaker, dataProvider);
+    BetHandler provideBetHandler(BalanceBuffer balanceBuffer, BetMaker betMaker, DataProvider dataProvider, Logger logger) {
+        TestBetHandler instance = new TestBetHandler(balanceBuffer, betMaker, dataProvider, logger);
         instance.init();
         return instance;
     }

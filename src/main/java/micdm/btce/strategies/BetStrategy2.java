@@ -16,13 +16,14 @@ import java.util.*;
 class BetStrategy2 implements BetStrategy {
 
     private static final MathContext RATIO_MAX_CONTEXT = new MathContext(6, RoundingMode.DOWN);
-    private static final BigDecimal MIN_RATIO = new BigDecimal("1.05");
 
     private final Config config;
+    private final Config.Strategy2Config strategyConfig;
     private final Logger logger;
 
-    BetStrategy2(Config config, Logger logger) {
+    BetStrategy2(Config config, Config.Strategy2Config strategyConfig, Logger logger) {
         this.config = config;
+        this.strategyConfig = strategyConfig;
         this.logger = logger;
     }
 
@@ -48,7 +49,7 @@ class BetStrategy2 implements BetStrategy {
 
     private Optional<Bet.Type> getType(Round round) {
         int delta = Math.abs(round.downCount() - round.upCount());
-        if (delta < config.BET_COUNT_DELTA) {
+        if (delta < strategyConfig.BET_COUNT_DELTA) {
             logger.info("Bet count delta is too low ({}), skipping", delta);
             return Optional.empty();
         }
@@ -69,10 +70,10 @@ class BetStrategy2 implements BetStrategy {
             ratio = round.downAmount().divide(round.upAmount(), RATIO_MAX_CONTEXT);
         }
         logger.debug("Ratio is {} ({} / {})", ratio, round.downAmount(), round.upAmount());
-        if (ratio.compareTo(MIN_RATIO) < 0) {
+        if (ratio.compareTo(strategyConfig.MIN_RATIO) < 0) {
             logger.debug("Ratio is too small, skipping");
             return Optional.empty();
         }
-        return Optional.of((ratio.compareTo(BigDecimal.ONE)) > 0 ? config.MIN_BET_AMOUNT : config.MIN_BET_AMOUNT);
+        return Optional.of((ratio.compareTo(BigDecimal.ONE)) > 0 ? strategyConfig.MAX_BET_AMOUNT : strategyConfig.MIN_BET_AMOUNT);
     }
 }

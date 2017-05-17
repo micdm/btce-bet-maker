@@ -9,7 +9,10 @@ import io.reactivex.Scheduler;
 import micdm.btce.DataProvider;
 import micdm.btce.models.ImmutableRound;
 import micdm.btce.models.Round;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
+import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
@@ -66,12 +69,18 @@ public class RemoteDataProvider implements DataProvider {
     private static class NewPeriodData {
 
         final int id;
+        final int pairId;
+        final int currency;
         final BigDecimal basePrice;
+        final String timeStr;
         final int timeLeft;
 
-        NewPeriodData(int id, BigDecimal basePrice, int timeLeft) {
+        NewPeriodData(int id, int pairId, int currency, BigDecimal basePrice, String timeStr, int timeLeft) {
             this.id = id;
+            this.pairId = pairId;
+            this.currency = currency;
             this.basePrice = basePrice;
+            this.timeStr = timeStr;
             this.timeLeft = timeLeft;
         }
     }
@@ -132,6 +141,8 @@ public class RemoteDataProvider implements DataProvider {
     }
 
     private static final Pattern BET_COUNT_PATTERN = Pattern.compile("&#8593;(\\d+) &#8595;(\\d+)");
+    private static final int PAIR_ID = 1;
+    private static final int CURRENCY_ID = 2;
 
     private final AccountIdProvider accountIdProvider;
     private final Gson gson;
@@ -154,6 +165,7 @@ public class RemoteDataProvider implements DataProvider {
         return Flowable.combineLatest(
             getMessages()
                 .ofType(NewPeriodData.class)
+                .filter(data -> data.pairId == PAIR_ID && data.currency == CURRENCY_ID)
                 .switchMap(newPeriodData ->
                     Flowable.combineLatest(
                         getMessages()
@@ -292,6 +304,7 @@ public class RemoteDataProvider implements DataProvider {
             .number(newPeriodData.id)
             .startPrice(newPeriodData.basePrice)
             .endPrice(tradeData.price)
+            .startTime(getRoundStartTime(newPeriodData.timeStr))
             .endsIn(Duration.standardSeconds(endsIn));
         if (periodUpdateData != null) {
             Matcher matcher = BET_COUNT_PATTERN.matcher(periodUpdateData.betsCountStr);
@@ -311,6 +324,11 @@ public class RemoteDataProvider implements DataProvider {
                 .upAmount(BigDecimal.ZERO);
         }
         return builder.build();
+    }
+
+    private DateTime getRoundStartTime(String raw) {
+        String[] parts = raw.split("-");
+        return LocalTime.parse(parts[0]).toDateTimeToday(DateTimeZone.forID("Europe/Moscow")).withZone(DateTimeZone.UTC);
     }
 
     @Override
