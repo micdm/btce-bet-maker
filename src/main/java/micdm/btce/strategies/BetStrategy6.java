@@ -37,8 +37,17 @@ class BetStrategy6 implements BetStrategy {
             .toMaybe()
             .onErrorResumeNext(Maybe.empty())
             .flatMap(probabilities -> {
+                int delta = Math.abs(round.downCount() - round.upCount());
+                if (delta < strategyConfig.BET_COUNT_DELTA) {
+                    logger.debug("Bet count delta is too small ({}), skipping", delta);
+                    return Maybe.empty();
+                }
                 Bet.Type betType = getBetType(probabilities);
                 BigDecimal ratio = getBetAmountRatio(round, betType);
+                if (ratio == null) {
+                    logger.debug("No ratio available, skipping");
+                    return Maybe.empty();
+                }
                 if (ratio.compareTo(strategyConfig.MIN_RATIO) <= 0) {
                     logger.debug("Ratio {} is too small, skipping", ratio);
                     return Maybe.empty();
@@ -59,6 +68,15 @@ class BetStrategy6 implements BetStrategy {
     }
 
     private BigDecimal getBetAmountRatio(Round round, Bet.Type betType) {
-        return betType == Bet.Type.DOWN ? round.upAmount().divide(round.downAmount(), RATIO_CONTEXT) : round.downAmount().divide(round.upAmount(), RATIO_CONTEXT);
+        if (betType == Bet.Type.DOWN) {
+            if (round.downAmount().equals(BigDecimal.ZERO)) {
+                return null;
+            }
+            return round.upAmount().divide(round.downAmount(), RATIO_CONTEXT);
+        }
+        if (round.upAmount().equals(BigDecimal.ZERO)) {
+            return null;
+        }
+        return round.downAmount().divide(round.upAmount(), RATIO_CONTEXT);
     }
 }

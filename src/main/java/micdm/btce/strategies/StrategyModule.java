@@ -4,6 +4,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntKey;
 import dagger.multibindings.IntoMap;
+import io.reactivex.Scheduler;
 import micdm.btce.Config;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -75,8 +76,8 @@ public class StrategyModule {
     @Provides
     @Singleton
     NeuralNetworkConnector provideNeuralNetworkConnector(Config config, Logger logger, @Named("neuralNetwork") OkHttpClient okHttpClient,
-                                                         @Named("neuralNetwork") Request.Builder requestBuilder) {
-        return new NeuralNetworkConnector(config, logger, okHttpClient, requestBuilder);
+                                                         @Named("neuralNetwork") Request.Builder requestBuilder, @Named("io") Scheduler ioScheduler) {
+        return new NeuralNetworkConnector(config, logger, okHttpClient, requestBuilder, ioScheduler);
     }
 
     @Provides
