@@ -100,7 +100,9 @@ public class RemoteModule {
     @Provides
     @Singleton
     DataProvider provideDataProvider(AccountIdProvider accountIdProvider, Gson gson, @Named("io") Scheduler ioScheduler, Logger logger, WebSocketFactory webSocketFactory) {
-        return new RemoteDataProvider(accountIdProvider, gson, ioScheduler, logger, webSocketFactory);
+        RemoteDataProvider instance = new RemoteDataProvider(accountIdProvider, gson, ioScheduler, logger, webSocketFactory);
+        instance.init();
+        return instance;
     }
 
     @Provides

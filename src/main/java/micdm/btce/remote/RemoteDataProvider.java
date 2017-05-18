@@ -6,6 +6,8 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Scheduler;
+import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.processors.PublishProcessor;
 import micdm.btce.DataProvider;
 import micdm.btce.models.ImmutableRound;
 import micdm.btce.models.Round;
@@ -151,6 +153,7 @@ public class RemoteDataProvider implements DataProvider {
     private final WebSocketFactory websocketFactory;
 
     private Flowable<Object> messages;
+    private final FlowableProcessor<Round> rounds = PublishProcessor.create();
 
     RemoteDataProvider(AccountIdProvider accountIdProvider, Gson gson, Scheduler ioScheduler, Logger logger, WebSocketFactory websocketFactory) {
         this.accountIdProvider = accountIdProvider;
@@ -160,36 +163,19 @@ public class RemoteDataProvider implements DataProvider {
         this.websocketFactory = websocketFactory;
     }
 
+    void init() {
+        Flowable
+            .combineLatest(
+                getPeriodDatas(),
+                getMessages().ofType(TradeData.class),
+                (datas, tradeData) -> buildRound(datas.newPeriodData, datas.periodUpdateData, datas.endsIn, tradeData)
+            )
+            .subscribe(rounds);
+    }
+
     @Override
     public Flowable<Round> getRounds() {
-        return Flowable.combineLatest(
-            getMessages()
-                .ofType(NewPeriodData.class)
-                .filter(data -> data.pairId == PAIR_ID && data.currency == CURRENCY_ID)
-                .switchMap(newPeriodData ->
-                    Flowable.combineLatest(
-                        getMessages()
-                            .ofType(PeriodUpdateData.class)
-                            .filter(data -> data.periodId == newPeriodData.id)
-                            .filter(data -> data.betsCountStr != null)
-                            .map(Optional::of)
-                            .startWith(Optional.empty()),
-                        Flowable
-                            .merge(
-                                Flowable.just(newPeriodData.timeLeft * 60),
-                                getMessages()
-                                    .ofType(PeriodTimeData.class)
-                                    .map(data -> data.minutes * 60)
-                            )
-                            .switchMap(seconds ->
-                                Flowable.interval(0, 1, TimeUnit.SECONDS).map(counter -> seconds - counter)
-                            ),
-                        (periodUpdateData, endsIn) -> new Datas(newPeriodData, periodUpdateData.isPresent() ? periodUpdateData.get() : null, endsIn)
-                    )
-                ),
-            getMessages().ofType(TradeData.class),
-            (datas, tradeData) -> buildRound(datas.newPeriodData, datas.periodUpdateData, datas.endsIn, tradeData)
-        );
+        return rounds;
     }
 
     private Flowable<Object> getMessages() {
@@ -329,6 +315,37 @@ public class RemoteDataProvider implements DataProvider {
     private DateTime getRoundStartTime(String raw) {
         String[] parts = raw.split("-");
         return LocalTime.parse(parts[0]).toDateTimeToday(DateTimeZone.forID("Europe/Moscow")).withZone(DateTimeZone.UTC);
+    }
+
+    private Flowable<Datas> getPeriodDatas() {
+        return getMessages()
+            .ofType(NewPeriodData.class)
+            .filter(data -> data.pairId == PAIR_ID && data.currency == CURRENCY_ID)
+            .switchMap(newPeriodData ->
+                Flowable.combineLatest(
+                    getMessages()
+                        .ofType(PeriodUpdateData.class)
+                        .filter(data -> data.periodId == newPeriodData.id)
+                        .filter(data -> data.betsCountStr != null)
+                        .map(Optional::of)
+                        .startWith(Optional.empty()),
+                    getEndsIn(newPeriodData.timeLeft),
+                    (periodUpdateData, endsIn) -> new Datas(newPeriodData, periodUpdateData.isPresent() ? periodUpdateData.get() : null, endsIn)
+                )
+            );
+    }
+
+    private Flowable<Long> getEndsIn(int initial) {
+        return Flowable
+            .merge(
+                Flowable.just(initial * 60),
+                getMessages()
+                    .ofType(PeriodTimeData.class)
+                    .map(data -> data.minutes * 60)
+            )
+            .switchMap(seconds ->
+                Flowable.interval(0, 1, TimeUnit.SECONDS).map(counter -> seconds - counter)
+            );
     }
 
     @Override

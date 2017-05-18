@@ -46,7 +46,9 @@ public class TestModule {
     @Provides
     @Singleton
     DataProvider provideDataProvider(BalanceBuffer balanceBuffer, Gson gson) {
-        return new TestDataProvider(balanceBuffer, gson, pathToData);
+        TestDataProvider instance = new TestDataProvider(balanceBuffer, gson, pathToData);
+        instance.init();
+        return instance;
     }
 
     @Provides

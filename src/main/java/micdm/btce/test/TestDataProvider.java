@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
+import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.processors.ReplayProcessor;
 import micdm.btce.DataProvider;
 import micdm.btce.models.Round;
 
@@ -17,7 +19,7 @@ class TestDataProvider implements DataProvider {
     private final Gson gson;
     private final String pathToData;
 
-    private Flowable<Round> source;
+    private final FlowableProcessor<Round> rounds = ReplayProcessor.create();
 
     TestDataProvider(BalanceBuffer balanceBuffer, Gson gson, String pathToData) {
         this.balanceBuffer = balanceBuffer;
@@ -25,26 +27,26 @@ class TestDataProvider implements DataProvider {
         this.pathToData = pathToData;
     }
 
+    void init() {
+        Flowable
+            .create((FlowableEmitter<Round> source) -> {
+                try (BufferedReader reader = new BufferedReader(new FileReader(pathToData))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        source.onNext(gson.fromJson(line, Round.class));
+                    }
+                    source.onComplete();
+                } catch (Exception e) {
+                    source.onError(e);
+                }
+            }, BackpressureStrategy.BUFFER)
+            .takeLast(280)
+            .subscribe(rounds);
+    }
+
     @Override
     public Flowable<Round> getRounds() {
-        if (source == null) {
-            source = Flowable
-                .create((FlowableEmitter<Round> source) -> {
-                    try (BufferedReader reader = new BufferedReader(new FileReader(pathToData))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            source.onNext(gson.fromJson(line, Round.class));
-                        }
-                        source.onComplete();
-                    } catch (Exception e) {
-                        source.onError(e);
-                    }
-                }, BackpressureStrategy.BUFFER)
-                .takeLast(280)
-                .replay()
-                .autoConnect();
-        }
-        return source;
+        return rounds;
     }
 
     @Override
