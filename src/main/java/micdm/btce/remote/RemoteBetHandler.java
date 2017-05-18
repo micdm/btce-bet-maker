@@ -66,10 +66,7 @@ class RemoteBetHandler implements BetHandler {
             .withLatestFrom(authenticator.run(), (roundBet, u) -> roundBet)
             .withLatestFrom(csrfTokenProvider.getToken(), RoundBetAndCsrfToken::new)
             .subscribe(roundBetAndCsrfToken -> {
-                for (Bet bet: roundBetAndCsrfToken.roundBet.downBets()) {
-                    makeBet(roundBetAndCsrfToken.roundBet.number(), bet.type(), bet.amount(), roundBetAndCsrfToken.csrfToken);
-                }
-                for (Bet bet: roundBetAndCsrfToken.roundBet.upBets()) {
+                for (Bet bet: roundBetAndCsrfToken.roundBet.bets()) {
                     makeBet(roundBetAndCsrfToken.roundBet.number(), bet.type(), bet.amount(), roundBetAndCsrfToken.csrfToken);
                 }
             });

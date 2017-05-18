@@ -11,7 +11,7 @@ import micdm.btce.models.RoundBet;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
-import java.util.Set;
+import java.util.Collection;
 
 class TestBetHandler implements BetHandler {
 
@@ -48,10 +48,7 @@ class TestBetHandler implements BetHandler {
             .share();
         pairs
             .doOnNext(pair -> {
-                for (Bet bet: pair.roundBet.downBets()) {
-                    logger.info("Making bet for round {}: {} for {}", pair.roundBet.number(), bet.amount(), bet.type());
-                }
-                for (Bet bet: pair.roundBet.upBets()) {
+                for (Bet bet: pair.roundBet.bets()) {
                     logger.info("Making bet for round {}: {} for {}", pair.roundBet.number(), bet.amount(), bet.type());
                 }
             })
@@ -86,7 +83,7 @@ class TestBetHandler implements BetHandler {
         }
     }
 
-    private BigDecimal getPrize(Set<Bet> winningBets, BigDecimal winningAmount, Set<Bet> losingBets, BigDecimal losingAmount) {
+    private BigDecimal getPrize(Collection<Bet> winningBets, BigDecimal winningAmount, Collection<Bet> losingBets, BigDecimal losingAmount) {
         BigDecimal prize = BigDecimal.ZERO;
         for (Bet bet: winningBets) {
             prize = prize.add(

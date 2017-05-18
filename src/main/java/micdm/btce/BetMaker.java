@@ -2,7 +2,6 @@ package micdm.btce;
 
 import io.reactivex.Flowable;
 import micdm.btce.misc.CommonFunctions;
-import micdm.btce.models.Bet;
 import micdm.btce.models.ImmutableRoundBet;
 import micdm.btce.models.Round;
 import micdm.btce.models.RoundBet;
@@ -36,18 +35,12 @@ public class BetMaker {
             .distinctUntilChanged(Round::number)
             .concatMap(round ->
                 betStrategy.getBets(round)
-                    .map(bets -> {
-                        ImmutableRoundBet.Builder builder = ImmutableRoundBet.builder().number(round.number());
-                        for (Bet bet: bets) {
-                            if (bet.type() == Bet.Type.DOWN) {
-                                builder.addDownBets(bet);
-                            }
-                            if (bet.type() == Bet.Type.UP) {
-                                builder.addUpBets(bet);
-                            }
-                        }
-                        return builder.build();
-                    })
+                    .map(bets ->
+                        ImmutableRoundBet.builder()
+                            .number(round.number())
+                            .bets(bets)
+                            .build()
+                    )
                     .toFlowable()
             );
     }
