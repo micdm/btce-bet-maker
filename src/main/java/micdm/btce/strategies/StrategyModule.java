@@ -75,6 +75,22 @@ public class StrategyModule {
 
     @Provides
     @Singleton
+    @IntoMap
+    @IntKey(8)
+    BetStrategy provideBetStrategy8() {
+        return new BetStrategy8();
+    }
+
+    @Provides
+    @Singleton
+    @IntoMap
+    @IntKey(9)
+    BetStrategy provideBetStrategy9() {
+        return new BetStrategy9();
+    }
+
+    @Provides
+    @Singleton
     NeuralNetworkConnector provideNeuralNetworkConnector(Config config, Logger logger, @Named("neuralNetwork") OkHttpClient okHttpClient,
                                                          @Named("neuralNetwork") Request.Builder requestBuilder, @Named("io") Scheduler ioScheduler) {
         return new NeuralNetworkConnector(config, logger, okHttpClient, requestBuilder, ioScheduler);
