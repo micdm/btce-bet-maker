@@ -1,4 +1,4 @@
-package micdm.btce.test;
+package micdm.btce.local;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -18,12 +18,12 @@ import javax.inject.Singleton;
 import java.util.Map;
 
 @Module
-public class TestModule {
+public class LocalModule {
 
     private final String pathToData;
     private final int currentBetStrategy;
 
-    public TestModule(String pathToData, int currentBetStrategy) {
+    public LocalModule(String pathToData, int currentBetStrategy) {
         this.pathToData = pathToData;
         this.currentBetStrategy = currentBetStrategy;
     }
@@ -46,17 +46,13 @@ public class TestModule {
     @Provides
     @Singleton
     DataProvider provideDataProvider(BalanceBuffer balanceBuffer, Gson gson) {
-        TestDataProvider instance = new TestDataProvider(balanceBuffer, gson, pathToData);
-        instance.init();
-        return instance;
+        return new LocalDataProvider(balanceBuffer, gson, pathToData);
     }
 
     @Provides
     @Singleton
     BetHandler provideBetHandler(BalanceBuffer balanceBuffer, BetMaker betMaker, DataProvider dataProvider, Logger logger) {
-        TestBetHandler instance = new TestBetHandler(balanceBuffer, betMaker, dataProvider, logger);
-        instance.init();
-        return instance;
+        return new LocalBetHandler(balanceBuffer, betMaker, dataProvider, logger);
     }
 
     @Provides

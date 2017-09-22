@@ -24,17 +24,13 @@ class MainModule {
     @Provides
     @Singleton
     BalanceWatcher provideBalanceWatcher(CommonFunctions commonFunctions, DataProvider dataProvider, Logger logger) {
-        BalanceWatcher instance = new BalanceWatcher(commonFunctions, dataProvider, logger);
-        instance.init();
-        return instance;
+        return new BalanceWatcher(commonFunctions, dataProvider, logger);
     }
 
     @Provides
     @Singleton
     RoundWatcher provideRoundWatcher(DataProvider dataProvider, Logger logger) {
-        RoundWatcher instance = new RoundWatcher(dataProvider, logger);
-        instance.init();
-        return instance;
+        return new RoundWatcher(dataProvider, logger);
     }
 
     @Provides

@@ -1,4 +1,4 @@
-package micdm.btce.test;
+package micdm.btce.local;
 
 import com.google.gson.Gson;
 import io.reactivex.BackpressureStrategy;
@@ -13,7 +13,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.math.BigDecimal;
 
-class TestDataProvider implements DataProvider {
+class LocalDataProvider implements DataProvider {
 
     private final BalanceBuffer balanceBuffer;
     private final Gson gson;
@@ -21,13 +21,14 @@ class TestDataProvider implements DataProvider {
 
     private final FlowableProcessor<Round> rounds = ReplayProcessor.create();
 
-    TestDataProvider(BalanceBuffer balanceBuffer, Gson gson, String pathToData) {
+    LocalDataProvider(BalanceBuffer balanceBuffer, Gson gson, String pathToData) {
         this.balanceBuffer = balanceBuffer;
         this.gson = gson;
         this.pathToData = pathToData;
     }
 
-    void init() {
+    @Override
+    public void init() {
         Flowable
             .create((FlowableEmitter<Round> source) -> {
                 try (BufferedReader reader = new BufferedReader(new FileReader(pathToData))) {

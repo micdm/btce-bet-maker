@@ -1,7 +1,7 @@
 package micdm.btce;
 
+import micdm.btce.local.LocalModule;
 import micdm.btce.remote.console.ConsoleModule;
-import micdm.btce.test.TestModule;
 
 public class Main {
 
@@ -15,20 +15,21 @@ public class Main {
 
     private static void runTest(String pathToDataFile, int currentBetStrategy) {
         TestComponent component = DaggerTestComponent.builder()
-            .testModule(new TestModule(pathToDataFile, currentBetStrategy))
+            .localModule(new LocalModule(pathToDataFile, currentBetStrategy))
             .build();
-        component.getBalanceWatcher();
-        component.getBetHandler();
-        component.getRoundWatcher();
+        component.getBalanceWatcher().init();
+        component.getRoundWatcher().init();
+        component.getBetHandler().init();
+        component.getDataProvider().init();
     }
 
     private static void runMain() {
         MainComponent component = DaggerMainComponent.builder()
             .consoleModule(new ConsoleModule(12001))
             .build();
-        component.getBalanceWatcher();
-        component.getBetHandler();
-        component.getRoundWatcher();
+        component.getBalanceWatcher().init();
+        component.getRoundWatcher().init();
+        component.getBetHandler().init();
         component.getMainThreadExecutor().run();
     }
 }

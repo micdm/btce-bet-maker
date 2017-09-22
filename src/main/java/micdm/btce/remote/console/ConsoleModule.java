@@ -23,9 +23,7 @@ public class ConsoleModule {
     @Provides
     @Singleton
     UserConsole provideUserConsole(Logger logger, @Named("newThread") Scheduler newThreadScheduler, ServerSocket serverSocket) {
-        UserConsole instance = new UserConsole(logger, newThreadScheduler, serverSocket);
-        instance.init();
-        return instance;
+        return new UserConsole(logger, newThreadScheduler, serverSocket);
     }
 
     @Provides

@@ -92,17 +92,13 @@ public class RemoteModule {
     @Provides
     @Singleton
     BetHandler provideBetHandler(Authenticator authenticator, BetMaker betMaker, CsrfTokenProvider csrfTokenProvider, Gson gson, Logger logger, @Named("remote") OkHttpClient okHttpClient) {
-        RemoteBetHandler instance = new RemoteBetHandler(authenticator, betMaker, csrfTokenProvider, gson, logger, okHttpClient);
-        instance.init();
-        return instance;
+        return new RemoteBetHandler(authenticator, betMaker, csrfTokenProvider, gson, logger, okHttpClient);
     }
 
     @Provides
     @Singleton
     DataProvider provideDataProvider(AccountIdProvider accountIdProvider, Gson gson, @Named("io") Scheduler ioScheduler, Logger logger, WebSocketFactory webSocketFactory) {
-        RemoteDataProvider instance = new RemoteDataProvider(accountIdProvider, gson, ioScheduler, logger, webSocketFactory);
-        instance.init();
-        return instance;
+        return new RemoteDataProvider(accountIdProvider, gson, ioScheduler, logger, webSocketFactory);
     }
 
     @Provides

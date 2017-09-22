@@ -163,7 +163,8 @@ public class RemoteDataProvider implements DataProvider {
         this.websocketFactory = websocketFactory;
     }
 
-    void init() {
+    @Override
+    public void init() {
         Flowable
             .combineLatest(
                 getPeriodDatas(),

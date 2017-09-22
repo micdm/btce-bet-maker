@@ -61,7 +61,8 @@ class RemoteBetHandler implements BetHandler {
         this.httpClient = httpClient;
     }
 
-    void init() {
+    @Override
+    public void init() {
         betMaker.getBets()
             .withLatestFrom(authenticator.run(), (roundBet, u) -> roundBet)
             .withLatestFrom(csrfTokenProvider.getToken(), RoundBetAndCsrfToken::new)

@@ -1,4 +1,4 @@
-package micdm.btce.test;
+package micdm.btce.local;
 
 import com.google.gson.*;
 import micdm.btce.models.ImmutableRound;

@@ -21,13 +21,19 @@ class BalanceWatcher {
     }
 
     Flowable<String> getBalanceInfo() {
-        return Flowable.zip(
-            dataProvider.getBalance().skip(1),
-            dataProvider.getBalance().compose(commonFunctions.getPrevious()),
-            dataProvider.getBalance().take(1).switchMap(commonFunctions::only),
-            (newBalance, previousBalance, startBalance) ->
-                String.format("Balance: %s (%s from previous, %s from start)", newBalance, newBalance.subtract(previousBalance),
-                              newBalance.subtract(startBalance))
-        );
+        return Flowable
+            .zip(
+                dataProvider.getBalance().skip(1),
+                dataProvider.getBalance().compose(commonFunctions.getPrevious()),
+                dataProvider.getBalance().take(1).switchMap(commonFunctions::only),
+                (newBalance, previousBalance, startBalance) ->
+                    String.format("balance: %s (%s from previous, %s from start)", newBalance, newBalance.subtract(previousBalance),
+                                  newBalance.subtract(startBalance))
+            )
+            .withLatestFrom(
+                dataProvider.getRounds(),
+                (output, round) ->
+                    String.format("Round: %s, %s", round.number(), output)
+            );
     }
 }

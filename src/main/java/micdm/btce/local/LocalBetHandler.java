@@ -1,4 +1,4 @@
-package micdm.btce.test;
+package micdm.btce.local;
 
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import java.math.BigDecimal;
 import java.util.Collection;
 
-class TestBetHandler implements BetHandler {
+class LocalBetHandler implements BetHandler {
 
     static class Pair {
         final Round round;
@@ -31,14 +31,15 @@ class TestBetHandler implements BetHandler {
     private final DataProvider dataProvider;
     private final Logger logger;
 
-    TestBetHandler(BalanceBuffer balanceBuffer, BetMaker betMaker, DataProvider dataProvider, Logger logger) {
+    LocalBetHandler(BalanceBuffer balanceBuffer, BetMaker betMaker, DataProvider dataProvider, Logger logger) {
         this.balanceBuffer = balanceBuffer;
         this.dataProvider = dataProvider;
         this.betMaker = betMaker;
         this.logger = logger;
     }
 
-    void init() {
+    @Override
+    public void init() {
         Flowable<Pair> pairs = Flowable
             .zip(
                 dataProvider.getRounds(),
